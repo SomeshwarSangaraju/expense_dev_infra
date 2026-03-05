@@ -1,12 +1,19 @@
 resource "aws_instance" "main" {
   for_each = var.instances
   ami           = local.ami
-  instance_type = "t3.micro"
+  instance_type = each.value
   vpc_security_group_ids = [aws_security_group.this.id]
+
+   provisioner "local-exec" {
+    command = "echo The server's IP address is ${self.private_ip} > inventory.ini"
+  }
+
+  
+
   tags = merge(
     local.tags,
     {
-        Name = "${each.key}"
+        Name = each.key
         Terraform = "true"
     }
   ) 

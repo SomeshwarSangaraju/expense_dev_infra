@@ -1,8 +1,9 @@
 resource "aws_route53_record" "roboshop" {
   for_each = var.instances 
-  zone_id = var.zone_id
-  name    = "${var.instances[each.value]}"
+  zone_id = var.zone_id 
+  name    = "${each.key == "frontend" ? "${var.domain_name}" : "${each.key}.${var.domain_name}"}"
   type    = "A"
   ttl     = 1
-  records = ["${var.instances[each.value] == "frontend" ? "${var.domain_name}" : "${var.instances[each.value]}.${var.domain_name}"} "]
+  records = ["${each.key == "frontend" ? "${aws_instance.main[each.key].public_ip}" : "${aws_instance.main[each.key].private_ip}"} "]
+  allow_overwrite = "true"
 }
