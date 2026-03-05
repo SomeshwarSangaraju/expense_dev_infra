@@ -5,7 +5,7 @@ resource "aws_instance" "main" {
   vpc_security_group_ids = [aws_security_group.this.id]
 
   provisioner "local-exec" {
-    command = "echo The server's IP address is ${self.private_ip} > inventory.ini"
+    command = "echo The server's IP address is ${self.private_ip} > inventory"
   }
 
     connection {
