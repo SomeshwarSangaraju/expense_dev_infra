@@ -8,7 +8,7 @@ terraform {
  
   backend "s3" {
     bucket = "terraform-86"
-    key    = "expense-project"
+    key    = "expense-bastion"
     region = "us-east-1"
     use_lockfile= true
     encrypt = true
