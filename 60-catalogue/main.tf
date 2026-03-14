@@ -17,11 +17,10 @@ resource "terraform_data" "catalogue" {
     aws_instance.catalogue.id
   ]
 
-
   # terraform copies this file to mongodb server
   provisioner "file" {
-    source = "bootstrap.sh"
-    destination = "/tmp/bootstrap.sh"
+    source = "catalogue.sh"
+    destination = "/tmp/catalogue.sh"
   }
 
   connection {
@@ -33,9 +32,28 @@ resource "terraform_data" "catalogue" {
 
   provisioner "remote-exec" {
     inline = [
-        "chmod +x /tmp/bootstrap.sh",
-        "sudo sh /tmp/bootstrap.sh mysql dev"
+        "chmod +x /tmp/catalogue.sh",
+        "sudo sh /tmp/catalogue.sh mysql dev"
     ]
   }
 }
 
+resource "aws_ec2_instance_state" "catalogue" {
+  instance_id = aws_instance.catalogue.id
+  state       = "stopped"
+  depends_on = [terraform_data.catalogue]
+
+}
+
+resource "aws_ami_from_instance" "catalogue" {
+  name               = "${local.common_suffix_name}-catalogue-ami"
+  source_instance_id = aws_instance.catalogue.id
+  depends_on = [aws_ec2_instance_state.catalogue]
+  tags = merge(
+    local.common_tags,
+    {
+        Name = "${local.common_suffix_name}-catalogue-ami"
+    }
+  )
+
+}
