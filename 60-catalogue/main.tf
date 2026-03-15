@@ -1,60 +1,60 @@
-resource "aws_instance" "catalogue" {
+resource "aws_instance" "backend" {
   ami           = local.ami_id
   instance_type = "t3.micro"
-  vpc_security_group_ids = [local.catalogue_sg_id]
+  vpc_security_group_ids = [local.backend_sg_id]
   subnet_id = local.private_subnet_id
 
   tags = merge(
     local.common_tags,
     {
-        Name = "${local.common_suffix_name}-catalogue"
+        Name = "${local.common_suffix_name}-backend"
     }
   )
 }
 
 # connect to instance using remote-exec provisioners through terraform data
-resource "terraform_data" "catalogue" {
+resource "terraform_data" "backend" {
   triggers_replace = [
-    aws_instance.catalogue.id
+    aws_instance.backend.id
   ]
 
   # terraform copies this file to mongodb server
   provisioner "file" {
-    source = "catalogue.sh"
-    destination = "/tmp/catalogue.sh"
+    source = "backend.sh"
+    destination = "/tmp/backend.sh"
   }
 
   connection {
     type     = "ssh"
     user     = "ec2-user"
     password = "DevOps321"
-    host     = aws_instance.catalogue.private_ip
+    host     = aws_instance.backend.private_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-        "chmod +x /tmp/catalogue.sh",
-        "sudo sh /tmp/catalogue.sh mysql dev"
+        "chmod +x /tmp/backend.sh",
+        "sudo sh /tmp/backend.sh mysql dev"
     ]
   }
 }
 
 # stop the instance to take ami
-resource "aws_ec2_instance_state" "catalogue" {
-  instance_id = aws_instance.catalogue.id
+resource "aws_ec2_instance_state" "backend" {
+  instance_id = aws_instance.backend.id
   state       = "stopped"
-  depends_on = [terraform_data.catalogue]
+  depends_on = [terraform_data.backend]
 
 }
 
-resource "aws_ami_from_instance" "catalogue" {
-  name               = "${local.common_suffix_name}-catalogue-ami"
-  source_instance_id = aws_instance.catalogue.id
-  depends_on = [aws_ec2_instance_state.catalogue]
+resource "aws_ami_from_instance" "backend" {
+  name               = "${local.common_suffix_name}-backend-ami"
+  source_instance_id = aws_instance.backend.id
+  depends_on = [aws_ec2_instance_state.backend]
   tags = merge(
     local.common_tags,
     {
-        Name = "${local.common_suffix_name}-catalogue-ami"
+        Name = "${local.common_suffix_name}-backend-ami"
     }
   )
 }
@@ -62,8 +62,8 @@ resource "aws_ami_from_instance" "catalogue" {
 
 
 # instance target group 
-resource "aws_lb_target_group" "catalogue" {
-  name     = "${local.common_suffix_name}-catalogue"
+resource "aws_lb_target_group" "backend" {
+  name     = "${local.common_suffix_name}-backend"
   port     = 8080
   protocol = "HTTP"
   vpc_id   = local.vpc_id
@@ -82,14 +82,14 @@ resource "aws_lb_target_group" "catalogue" {
 }
 
 
-resource "aws_launch_template" "catalogue" {
-  name = "${local.common_suffix_name}-catalogue"
-  image_id = aws_ami_from_instance.catalogue.id
+resource "aws_launch_template" "backend" {
+  name = "${local.common_suffix_name}-backend"
+  image_id = aws_ami_from_instance.backend.id
 
   instance_initiated_shutdown_behavior = "terminate"
   instance_type = "t3.micro"
 
-  vpc_security_group_ids = [local.catalogue_sg_id]
+  vpc_security_group_ids = [local.backend_sg_id]
 
   # when we run terraform apply again, a new version will be created with new AMI ID
   update_default_version = true
@@ -101,7 +101,7 @@ resource "aws_launch_template" "catalogue" {
     tags = merge(
       local.common_tags,
       {
-        Name = "${local.common_suffix_name}-catalogue"
+        Name = "${local.common_suffix_name}-backend"
       }
     )
   }
@@ -112,7 +112,7 @@ resource "aws_launch_template" "catalogue" {
     tags = merge(
       local.common_tags,
       {
-        Name = "${local.common_suffix_name}-catalogue"
+        Name = "${local.common_suffix_name}-backend"
       }
     )
   }
@@ -121,14 +121,14 @@ resource "aws_launch_template" "catalogue" {
   tags = merge(
       local.common_tags,
       {
-        Name = "${local.common_suffix_name}-catalogue"
+        Name = "${local.common_suffix_name}-backend"
       }
   )
 
 }
 
-resource "aws_autoscaling_group" "catalogue" {
-  name                      = "${local.common_suffix_name}-catalogue"
+resource "aws_autoscaling_group" "backend" {
+  name                      = "${local.common_suffix_name}-backend"
   max_size                  = 10
   min_size                  = 1
   health_check_grace_period = 100
@@ -136,11 +136,11 @@ resource "aws_autoscaling_group" "catalogue" {
   desired_capacity          = 1
   force_delete              = false
   launch_template {
-    id      = aws_launch_template.catalogue.id
-    version = aws_launch_template.catalogue.latest_version
+    id      = aws_launch_template.backend.id
+    version = aws_launch_template.backend.latest_version
   }
   vpc_zone_identifier       = local.private_subnet_ids
-  target_group_arns = [aws_lb_target_group.catalogue.arn]
+  target_group_arns = [aws_lb_target_group.backend.arn]
 
   instance_refresh {
     strategy = "Rolling"
@@ -154,7 +154,7 @@ resource "aws_autoscaling_group" "catalogue" {
     for_each = merge(
       local.common_tags,
       {
-        Name = "${local.common_suffix_name}-catalogue"
+        Name = "${local.common_suffix_name}-backend"
       }
     )
     content {
@@ -171,9 +171,9 @@ resource "aws_autoscaling_group" "catalogue" {
 }
 
 
-resource "aws_autoscaling_policy" "catalogue" {
-  autoscaling_group_name = aws_autoscaling_group.catalogue.name
-  name                   = "${local.common_suffix_name}-catalogue"
+resource "aws_autoscaling_policy" "backend" {
+  autoscaling_group_name = aws_autoscaling_group.backend.name
+  name                   = "${local.common_suffix_name}-backend"
   policy_type            = "TargetTrackingScaling"
 
   target_tracking_configuration {
@@ -185,30 +185,30 @@ resource "aws_autoscaling_policy" "catalogue" {
   }
 }
 
-resource "aws_lb_listener_rule" "catalogue" {
+resource "aws_lb_listener_rule" "backend" {
   listener_arn = local.backend_alb_listener_arn
   priority     = 10
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.catalogue.arn
+    target_group_arn = aws_lb_target_group.backend.arn
   }
 
   condition {
     host_header {
-      values = ["catalogue.backend-alb-${var.environment}.${var.domain_name}"]
+      values = ["backend.backend-alb-${var.environment}.${var.domain_name}"]
     }
   }
 }
 
-resource "terraform_data" "catalogue_local" {
+resource "terraform_data" "backend_local" {
   triggers_replace = [
-    aws_instance.catalogue.id
+    aws_instance.backend.id
   ]
   
-  depends_on = [aws_autoscaling_policy.catalogue]
+  depends_on = [aws_autoscaling_policy.backend]
   provisioner "local-exec" {
-    command = "aws ec2 terminate-instances --instance-ids ${aws_instance.catalogue.id}"
+    command = "aws ec2 terminate-instances --instance-ids ${aws_instance.backend.id}"
   }
 }
 
