@@ -1,18 +1,11 @@
 resource "aws_lb" "frontend_alb" {
-
   name               = "${local.common_suffix_name}-frontend-alb"
-  internal           = true
+  internal           = false
   load_balancer_type = "application"
   security_groups    = [local.frontend_alb_sg_id]
   subnets            = local.public_subnet_ids
 
   enable_deletion_protection = false # prevents accidental deletion from UI
-
-#   access_logs {
-#     bucket  = aws_s3_bucket.lb_logs.id
-#     prefix  = "test-lb"
-#     enabled = true
-#   }
 
    tags = merge (
     local.common_tags,
@@ -41,7 +34,7 @@ resource "aws_lb_listener" "frontend_alb" {
   }
 }
 
-resource "aws_route53_record" "backend_alb" {
+resource "aws_route53_record" "frontend_alb" {
   zone_id = var.zone_id
   name    = "${var.project}-${var.environment}.${var.domain_name}"
   type    = "A"
