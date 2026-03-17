@@ -1,3 +1,4 @@
+# Create EC2 instance
 resource "aws_instance" "backend" {
   ami           = local.ami_id
   instance_type = "t3.micro"
@@ -7,7 +8,7 @@ resource "aws_instance" "backend" {
   tags = merge(
     local.common_tags,
     {
-        Name = "${local.common_suffix_name}-backend"
+        Name = "${local.common_suffix_name}-backend" # expense-dev-backend
     }
   )
 }
@@ -18,17 +19,16 @@ resource "terraform_data" "backend" {
     aws_instance.backend.id
   ]
 
-  # terraform copies this file to mongodb server
-  provisioner "file" {
-    source = "backend.sh"
-    destination = "/tmp/backend.sh"
-  }
-
   connection {
     type     = "ssh"
     user     = "ec2-user"
     password = "DevOps321"
     host     = aws_instance.backend.private_ip
+  }
+  # terraform copies this file to mongodb server
+  provisioner "file" {
+    source = "backend.sh"
+    destination = "/tmp/backend.sh"
   }
 
   provisioner "remote-exec" {
@@ -147,7 +147,7 @@ resource "aws_autoscaling_group" "backend" {
     preferences {
       min_healthy_percentage = 50 # atleast 50% of the instances should be up and running
     }
-    # triggers = ["launch_template"]
+    triggers = ["launch_template"]
   }
   
   dynamic "tag" {  # we will get the iterator with name as tag

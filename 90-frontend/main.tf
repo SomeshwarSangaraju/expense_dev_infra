@@ -60,7 +60,6 @@ resource "aws_lb_target_group" "frontend" {
   name        = "${local.common_suffix_name}-frontend"
   port        = 80
   protocol    = "HTTP"
-  # target_type = "ip"
   vpc_id      = local.vpc_id
   deregistration_delay = 60 # waiting period before deleting the instance
 
