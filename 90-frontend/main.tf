@@ -198,7 +198,8 @@ resource "terraform_data" "frontend_local" {
     aws_instance.frontend.id
   ]
   
-  depends_on = [aws_ami_from_instance.frontend]
+  depends_on = [aws_autoscaling_policy.frontend]
+
   provisioner "local-exec" {
     command = "aws ec2 terminate-instances --instance-ids ${aws_instance.frontend.id}"
   }
