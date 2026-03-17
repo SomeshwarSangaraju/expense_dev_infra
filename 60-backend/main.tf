@@ -149,6 +149,14 @@ resource "aws_autoscaling_group" "backend" {
     }
     triggers = ["launch_template"]
   }
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+      desired_capacity,
+      # any other fields that you update frequently but shouldn't trigger refresh
+    ]
+  }
   
   dynamic "tag" {  # we will get the iterator with name as tag
     for_each = merge(
