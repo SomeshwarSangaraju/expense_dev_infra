@@ -147,7 +147,7 @@ resource "aws_autoscaling_group" "backend" {
     preferences {
       min_healthy_percentage = 50 # atleast 50% of the instances should be up and running
     }
-    triggers = ["launch_template"]
+    # triggers = ["launch_template"]
   }
   
   dynamic "tag" {  # we will get the iterator with name as tag
@@ -201,13 +201,13 @@ resource "aws_lb_listener_rule" "backend" {
   }
 }
 
-# resource "terraform_data" "backend_local" {
-#   triggers_replace = [
-#     aws_instance.backend.id
-#   ]
+resource "terraform_data" "backend_local" {
+  triggers_replace = [
+    aws_instance.backend.id
+  ]
   
-#   depends_on = [aws_autoscaling_policy.backend]
-#   provisioner "local-exec" {
-#     command = "aws ec2 terminate-instances --instance-ids ${aws_instance.backend.id}"
-#   }
-# }
+  depends_on = [aws_autoscaling_policy.backend]
+  provisioner "local-exec" {
+    command = "aws ec2 terminate-instances --instance-ids ${aws_instance.backend.id}"
+  }
+}
