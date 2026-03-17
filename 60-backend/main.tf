@@ -152,7 +152,7 @@ resource "aws_autoscaling_group" "backend" {
 
   lifecycle {
     ignore_changes = [
-      tags,
+      tag,
       desired_capacity,
       # any other fields that you update frequently but shouldn't trigger refresh
     ]
