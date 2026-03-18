@@ -129,7 +129,7 @@ resource "aws_launch_template" "backend" {
 
 resource "aws_autoscaling_group" "backend" {
   name                      = "${local.common_suffix_name}-backend"
-  max_size                  = 10
+  max_size                  = 2
   min_size                  = 1
   health_check_grace_period = 100
   health_check_type         = "ELB"

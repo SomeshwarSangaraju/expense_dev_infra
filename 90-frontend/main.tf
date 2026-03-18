@@ -48,6 +48,11 @@ resource "aws_ami_from_instance" "frontend" {
   source_instance_id = aws_instance.frontend.id
   description        = "AMI created by Terraform from an existing instance"
   depends_on = [aws_ec2_instance_state.frontend]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = merge(
     local.common_tags,
     {
@@ -140,7 +145,7 @@ resource "aws_autoscaling_group" "frontend" {
     preferences {
       min_healthy_percentage = 50 # atleast 50% of the instances should be up and running
     }
-    triggers = ["launch_template"]
+    # triggers = ["launch_template"]
   }
 
   lifecycle {
@@ -201,9 +206,9 @@ resource "aws_lb_listener_rule" "frontend" {
 }
 
 resource "terraform_data" "frontend_local" {
-  triggers_replace = [
-    aws_instance.frontend.id
-  ]
+  # triggers_replace = [
+  #   aws_instance.frontend.id
+  # ]
   
   depends_on = [aws_autoscaling_policy.frontend]
 
