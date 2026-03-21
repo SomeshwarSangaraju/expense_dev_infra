@@ -5,6 +5,7 @@ locals{
     frontend_sg_id = data.aws_ssm_parameter.frontend_sg_id.value
     frontend_alb_sg_id = data.aws_ssm_parameter.frontend_alb_sg_id.value
     backend_alb_sg_id = data.aws_ssm_parameter.backend_alb_sg_id.value
+    open_vpn_sg_id = data.aws_ssm_parameter.open_vpn_sg_id.value
 
     common_tags={
         Project = "Expense"
